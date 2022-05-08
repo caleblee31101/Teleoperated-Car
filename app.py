@@ -1,20 +1,20 @@
 from time import sleep, perf_counter
 from threading import Thread
-import cv2
 
 from Car import Car
 from Gps import Gps
 from Imu import Imu
 from webcamvideostream import WebcamVideoStream
+import cv2
 
-from flask import Flask, render_template, jsonify, Response
+from flask import Flask, render_template, jsonify, Response, request
 
 app = Flask(__name__)
 
-Car = Car(17,27)
-Gps = Gps()
-Imu = Imu()
-webcam = None
+car = Car(17,27)
+gps = Gps()
+imu = Imu()
+webcam = WebcamVideoStream()
 
 roll = 0
 pitch = 0
@@ -25,7 +25,7 @@ def callImu():
     global pitch
     global yaw
     while True:
-        orientation = Imu.getOrientation()
+        orientation = imu.getOrientation()
         roll = orientation[0]
         pitch = orientation[1]
         yaw = orientation[2]
@@ -34,22 +34,8 @@ def callImu():
 imuThread = Thread(target=callImu)
 imuThread.start()
 
-"""
-def task(id):
-    print(f'Starting the task {id}...')
-    sleep(1)
-    print('done')
-"""
-@app.route("/", methods = ["POST","GET"])
+@app.route("/")
 def home():
-    """
-    if request.method == 'POST':
-	return jsonify(
-	    
-	    
-	)
-    if request.method == 'GET':
-    """
     return render_template("index.html")
 
 def gen(camera):
@@ -65,9 +51,19 @@ def gen(camera):
             print("frame is none")
         sleep(0.03)
 
+@app.route("/postCarMovement", methods = ["POST"])
+def postCarMovement():
+    movement = request.json
+    steeringPwm = movement["steeringPwm"]
+    throttlePwm = movement["throttlePwm"]
+    seconds = movement["seconds"]
+    car.setSteering(steeringPwm)
+    car.runDuration(throttlePwm, seconds)
+    return "", 201
+
 @app.route("/getGpsPosition", methods = ["GET"])
 def getGpsPosition():
-    position = Gps.getPosition()
+    position = gps.getPosition()
     return jsonify(
         latitude = position[0],
         longitude = position[1],
@@ -75,7 +71,7 @@ def getGpsPosition():
 
 @app.route("/getImuOrientation", methods = ["GET"])
 def getImuOrientation():
-    orientation = Imu.getOrientation()
+    orientation = imu.getOrientation()
     return jsonify(
         r = roll,
         p = pitch,
@@ -88,14 +84,11 @@ def getImuOrientation():
         yaw = orientation[2],
     )
     """
-
+    
 @app.route('/video_feed')
 def video_feed():
     global webcam
-    if webcam is None:
-        webcam = WebcamVideoStream()
     return Response(gen(webcam.start()),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, threaded=True)
-    
+    app.run(host='0.0.0.0', debug=False, threaded=True)

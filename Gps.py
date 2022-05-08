@@ -8,6 +8,8 @@ class Gps:
         port = "/dev/ttyS0"
         self.ser = serial.Serial(port, baudrate=9600, timeout=0.5)
         #dataout = pynmea2.NMEAStreamReader()
+        print("gps init")
+
     def getPosition(self):
         loops = 0
         while True:

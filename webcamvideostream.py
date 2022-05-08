@@ -5,7 +5,7 @@ import numpy as np
 
 class WebcamVideoStream:
     def __init__(self, src = 0):
-        print("init")
+        print("init camera")
         self.stream = cv2.VideoCapture(src)
         (self.grabbed, self.frame) = self.stream.read()
         self.stopped = False
@@ -14,19 +14,19 @@ class WebcamVideoStream:
         print("init finished")
         
     def start(self):
+        self.stopped = False
         if self.t is None:
             print("start thread")
             self.t = Thread(target=self.update, args=())
             self.t.daemon = True
             self.t.start()
         return self
-    
+            
     def update(self):
         print("read")
         while True:
             if self.stopped:
-                return
-            
+                return # returns nothing to terminate loop
             (self.grabbed, self.frame) = self.stream.read()
     
     def read(self):
