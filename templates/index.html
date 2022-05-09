@@ -38,9 +38,15 @@
     
     <div id="Video and Control" class="tabcontent">
       <img id="bg" src="{{ url_for('video_feed') }}">  
-
-      <form action="/postCarMovement" method="POST">
-        
+      <!--
+      <form id="idCameraOff" action="/postStopCamera" method="POST">
+        <button type="submit">Off</button>
+      </form>
+      <form id="idCameraOn" action="/postStartCamera" method="POST">
+        <button type="submit">On</button>
+      </form>
+      -->
+      <form id="idCarMove" action="/postCarMovement" method="POST">        
         <div class="form-group">
           <label for="steering">Steering Angle:</label>
           <input type="range" min="1000" max="2000" value="1500" step="50" id="steering" name="steeringPwm">
@@ -161,7 +167,142 @@
 	}
 	return res.json();
     }
+
+    // Post commands to car
+    const carForm = document.getElementById("idCarMove");
     
+    //Add an event listener to the form element and handler for the submit an event.
+    carForm.addEventListener("submit", async (e) => {
+	e.preventDefault();
+	let form = e.currentTarget;
+	let url = form.action;
+	
+	try {
+	    let formData = new FormData(form);
+	    let responseData = await postCarMove({ url, formData });
+	    //let { serverDataResponse } = responseData;
+	    
+	    //Display the response data in the console (for debugging)
+	    //console.log(serverDataResponse);
+	    //alert("Car Message Created");
+            console.log("Car Message Created");
+	} catch (error) {
+	    //If an error occurs display it in the console (for debugging)
+	    console.error(error);
+	    alert("Car Message Failed");
+	}
+	//form.reset();
+    });
+    
+    async function postCarMove({ url, formData }) {
+	let formDataObject = Object.fromEntries(formData.entries());
+	let formDataJsonString = JSON.stringify(formDataObject);
+	
+	let fetchOptions = {
+	    method: "POST",
+	    headers: {
+		"Content-Type": "application/json",
+		Accept: "application/json",
+	    },
+	    body: formDataJsonString,
+	};
+	
+	let res = await fetch(url, fetchOptions);
+	
+	if (!res.ok) {
+	    let error = await res.text();
+	    throw new Error(error);
+	}
+	//return res.json();
+	// res does not have any json returned for create.
+	return "ok";
+    }
+/*
+    // Turns camera off
+    const cameraOffForm = document.getElementById("idCameraOff");
+    
+    //Add an event listener to the form element and handler for the submit an event.
+    cameraOffForm.addEventListener("submit", async (e) => {
+	e.preventDefault();
+	let form = e.currentTarget;
+	let url = form.action;
+	
+	try {
+	    let formData = new FormData(form);
+	    let responseData = await postCameraOff({ url, formData });
+	    
+            console.log("Camera Off Sent");
+	} catch (error) {
+	    //If an error occurs display it in the console (for debugging)
+	    console.error(error);
+	    alert("Camera Off Failed");
+	}
+	//form.reset();
+    });
+    
+    async function postCameraOff({ url, formData }) {	
+	let fetchOptions = {
+	    method: "POST",
+	    headers: {
+		"Content-Type": "application/json",
+		Accept: "application/json",
+	    }
+	};
+	
+	let res = await fetch(url, fetchOptions);
+	
+	if (!res.ok) {
+	    let error = await res.text();
+	    throw new Error(error);
+	}
+	//return res.json();
+	// res does not have any json returned for create.
+	return "ok";
+    }
+
+
+    // Turns camera on
+    const cameraOnForm = document.getElementById("idCameraOn");
+    
+    //Add an event listener to the form element and handler for the submit an event.
+    cameraOnForm.addEventListener("submit", async (e) => {
+	e.preventDefault();
+	let form = e.currentTarget;
+	let url = form.action;
+	
+	try {
+	    let formData = new FormData(form);
+	    let responseData = await postCameraOn({ url, formData });
+	    
+            console.log("Camera On Sent");
+	} catch (error) {
+	    //If an error occurs display it in the console (for debugging)
+	    console.error(error);
+	    alert("Camera On Failed");
+	}
+	//form.reset();
+    });
+    
+    async function postCameraOn({ url, formData }) {	
+	let fetchOptions = {
+	    method: "POST",
+	    headers: {
+		"Content-Type": "application/json",
+		Accept: "application/json",
+	    }
+	};
+	
+	let res = await fetch(url, fetchOptions);
+	
+	if (!res.ok) {
+	    let error = await res.text();
+	    throw new Error(error);
+	}
+	//return res.json();
+	// res does not have any json returned for create.
+	return "ok";
+    }
+*/    
     // Gets value for the steering slider
     var steeringSlider = document.getElementById("steering");
     var steeringOutput = document.getElementById("steeringValue");

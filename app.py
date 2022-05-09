@@ -12,11 +12,13 @@ from flask import Flask, render_template, jsonify, Response, request, redirect, 
 app = Flask(__name__)
 
 car = Car(17,27)
+car.reset()
 gps = Gps()
 imu = Imu()
 webcam = WebcamVideoStream()
 
-carThread = Thread(target=car.run)
+
+#carThread = Thread(target=car.run)
 
 roll = 0
 pitch = 0
@@ -51,14 +53,16 @@ def gen(camera):
                    b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n\r\n')
         else:
             print("frame is none")
-        sleep(0.03)
+        sleep(0.1)
 
 @app.route("/postCarMovement", methods = ["POST"])
 def postCarMovement():
-    movement = request.form
-    steeringPwm = int(movement.get("steeringPwm"))
-    throttlePwm = int(movement.get("throttlePwm"))
-    seconds = int(movement.get("seconds"))
+
+    movement = request.json
+    steeringPwm = int(movement["steeringPwm"])
+    throttlePwm = int(movement["throttlePwm"])
+    seconds = int(movement["seconds"])
+    
     car.run(steeringPwm, throttlePwm, seconds)
     return "", 201
 
@@ -85,7 +89,19 @@ def getImuOrientation():
         yaw = orientation[2],
     )
     """
-    
+
+@app.route('/postStopCamera', methods = ["POST"])
+def postStopCamera():
+    global webcam
+    webcam.stop()
+    return "", 200
+
+@app.route('/postStartCamera', methods = ["POST"])
+def postStartCamera():
+    global webcam
+    webcam.start()
+    return "", 200
+
 @app.route('/video_feed')
 def video_feed():
     global webcam

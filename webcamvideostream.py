@@ -26,7 +26,7 @@ class WebcamVideoStream:
         print("read")
         while True:
             if self.stopped:
-                return # returns nothing to terminate loop
+                return # returns nothing to terminate thread
             (self.grabbed, self.frame) = self.stream.read()
     
     def read(self):
