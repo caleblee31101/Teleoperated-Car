@@ -22,10 +22,10 @@ class Car:
         self.pi.set_servo_pulsewidth(self.steeringPin, 1500)
         self.pi.set_servo_pulsewidth(self.throttlePin, 1500)
         
-    def runDuration(self, pwm, seconds):
-        self.pi.set_servo_pulsewidth(self.steeringPin, pwm)
-        self.isRunning
+    def run(self, steeringPwm, throttlePwm, seconds):
+        self.setSteering(steeringPwm)
+        self.setThrottle(throttlePwm)
         time.sleep(seconds)
-        self.pi.set_servo_pulsewidth(self.steeringPin, 1500)
+        self.reset()
 
         

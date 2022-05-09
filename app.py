@@ -7,7 +7,7 @@ from Imu import Imu
 from webcamvideostream import WebcamVideoStream
 import cv2
 
-from flask import Flask, render_template, jsonify, Response, request
+from flask import Flask, render_template, jsonify, Response, request, redirect, url_for
 
 app = Flask(__name__)
 
@@ -15,6 +15,8 @@ car = Car(17,27)
 gps = Gps()
 imu = Imu()
 webcam = WebcamVideoStream()
+
+carThread = Thread(target=car.run)
 
 roll = 0
 pitch = 0
@@ -30,7 +32,7 @@ def callImu():
         pitch = orientation[1]
         yaw = orientation[2]
         sleep(0.5)
-
+        
 imuThread = Thread(target=callImu)
 imuThread.start()
 
@@ -53,12 +55,11 @@ def gen(camera):
 
 @app.route("/postCarMovement", methods = ["POST"])
 def postCarMovement():
-    movement = request.json
-    steeringPwm = movement["steeringPwm"]
-    throttlePwm = movement["throttlePwm"]
-    seconds = movement["seconds"]
-    car.setSteering(steeringPwm)
-    car.runDuration(throttlePwm, seconds)
+    movement = request.form
+    steeringPwm = int(movement.get("steeringPwm"))
+    throttlePwm = int(movement.get("throttlePwm"))
+    seconds = int(movement.get("seconds"))
+    car.run(steeringPwm, throttlePwm, seconds)
     return "", 201
 
 @app.route("/getGpsPosition", methods = ["GET"])

@@ -6,39 +6,180 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css' ) }}">
-    <script src="static/tab.js"></script> 
+    <script src="static/tab.js"></script>
+    <script type="text/javascript" src="static/jquery-3.6.0.min.js"></script>
     <title>Index</title>
   </head>
 
   <body>
     <!-- Tab links -->
     <div class="tab">
-      <button class="tablinks" onclick="openCity(event, 'London')">London</button>
-      <button class="tablinks" onclick="openCity(event, 'Paris')">Paris</button>
-      <button class="tablinks" onclick="openCity(event, 'Tokyo')">Tokyo</button>
-      <button class="tablinks" onclick="openCity(event, 'Video and Control')">Video and Control</button>
+      <button class="tablinks" onclick="openCity(event, 'Home')" id="idHome">Home</button>
+      <button class="tablinks" onclick="openCity(event, 'Orientation and Position')" id="idOrientation">Orientation and Position</button>
+      <button class="tablinks" onclick="openCity(event, 'Video and Control')" id="idVideo">Video and Control</button>
     </div>
 
     <!-- Tab content -->
-    <div id="London" class="tabcontent">
-      <h3>London</h3>
-      <p>London is the capital city of England.</p>
+    <div id="Home" class="tabcontent">
+      <h1>Welcome!</h1>
     </div>
     
-    <div id="Paris" class="tabcontent">
-      <h3>Paris</h3>
-      <p>Paris is the capital of France.</p>
-    </div>
-
-    <div id="Tokyo" class="tabcontent">
-      <h3>Tokyo</h3>
-      <p>Tokyo is the capital of Japan.</p>
+    <div id="Orientation and Position" class="tabcontent">
+      <form id="idGps" action="/getGpsPosition" method="GET">
+        <input type="submit" value="Get GPS coordinates">
+      </form>
+      <div id="displayPosition"></div>
+        
+      <form id="idImu" action="/getImuOrientation" method="GET">
+        <input type="submit" value="Get Imu Orientation">
+      </form>
+      <div id="displayOrientation"></div>
     </div>
     
     <div id="Video and Control" class="tabcontent">
       <img id="bg" src="{{ url_for('video_feed') }}">  
+
+      <form action="/postCarMovement" method="POST">
+        
+        <div class="form-group">
+          <label for="steering">Steering Angle:</label>
+          <input type="range" min="1000" max="2000" value="1500" step="50" id="steering" name="steeringPwm">
+          <p id="steeringValue"></p>
+        </div>
+
+        <div class="form-group">
+          <label for="throttle">Speed:</label>
+        <input type="range" min="1000" max="2000" value="1500" step="50" id="throttle" name="throttlePwm">
+        </div>
+        <p id="throttleValue"></p>
+
+        <div class="form-group">
+          <label for="time">Time:</label>
+          <input type="number" id="time" name="seconds" min="0" max="10">
+        </div>
+
+        <button type="submit">Send</button>
+
+      </form>
     </div>
     
   </body>
 
+  <script type="text/javascript">
+    // Get the element with id="idHome" and click on it
+    document.getElementById("idHome").click();
+
+    // Returns Position
+    const gpsForm = document.getElementById("idGps");
+    
+    //Add an event listener to the form element and handler for the submit an event.
+    gpsForm.addEventListener("submit", async (e) => {
+	e.preventDefault();
+	let form = e.currentTarget;
+	let url = form.action;
+	
+	try {
+	    let formData = new FormData(form);
+	    let responseData = await getPosition({ url, formData });
+	    var displayContent = "No Satellites Found";
+	    
+	    console.log(responseData);
+
+            displayContent = "<ul>latitude: " + responseData.latitude + "</ul>\n";
+            displayContent = displayContent + "<ul>longitude: " + responseData.longitude + "</ul>\n";
+            
+	    $('#displayPosition').html(displayContent);
+	} catch (error) {
+	    //If an error occurs display it in the console (for debugging)
+	    console.error(error);
+	    alert("Gps Call Failed");
+	}
+	form.reset();
+    });
+    
+    async function getPosition({ url, formData }) {
+	let fetchOptions = {
+	    method: "GET",
+	    headers: {
+		"Content-Type": "application/json",
+		Accept: "application/json",
+	    }
+	};
+	
+	let res = await fetch(url, fetchOptions);
+	
+	if (!res.ok) {
+	    let error = await res.text();
+	    throw new Error(error);
+	}
+	return res.json();
+    }
+
+    // Returns Orientation
+    const imuForm = document.getElementById("idImu");
+    
+    //Add an event listener to the form element and handler for the submit an event.
+    imuForm.addEventListener("submit", async (e) => {
+	e.preventDefault();
+	let form = e.currentTarget;
+	let url = form.action;
+	
+	try {
+	    let formData = new FormData(form);
+	    let responseData = await getOrientation({ url, formData });
+	    var displayContent = "No Imu Found";
+	    
+	    console.log(responseData);
+
+            displayContent = "<ul>roll: " + responseData.r + "</ul>\n";
+            displayContent = displayContent + "<ul>pitch: " + responseData.p + "</ul>\n";
+            displayContent = displayContent + "<ul>yaw: " + responseData.y + "</ul>\n";
+            
+	    $('#displayOrientation').html(displayContent);
+	} catch (error) {
+	    //If an error occurs display it in the console (for debugging)
+	    console.error(error);
+	    alert("Gps Call Failed");
+	}
+	form.reset();
+    });
+    
+    async function getOrientation({ url, formData }) {
+	let fetchOptions = {
+	    method: "GET",
+	    headers: {
+		"Content-Type": "application/json",
+		Accept: "application/json",
+	    }
+	};
+	
+	let res = await fetch(url, fetchOptions);
+	
+	if (!res.ok) {
+	    let error = await res.text();
+	    throw new Error(error);
+	}
+	return res.json();
+    }
+    
+    // Gets value for the steering slider
+    var steeringSlider = document.getElementById("steering");
+    var steeringOutput = document.getElementById("steeringValue");
+    steeringOutput.innerHTML = steeringSlider.value; // Display the default steeringSlider value
+
+    // Update the current steeringSlider value (each time you drag the steeringSlider handle)
+    steeringSlider.oninput = function() {
+        steeringOutput.innerHTML = this.value;
+    }
+    
+    // Gets value for the speed slider
+    var throttleSlider = document.getElementById("throttle");
+    var throttleOutput = document.getElementById("throttleValue");
+    throttleOutput.innerHTML = throttleSlider.value; // Display the default throttleSlider value
+
+    // Update the current throttleSlider value (each time you drag the throttleSlider handle)
+    throttleSlider.oninput = function() {
+        throttleOutput.innerHTML = this.value;
+    } 
+    </script>
 </html>
